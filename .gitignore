@@ -1,0 +1,6 @@
+# Source media (not used by the website)
+*.mp4
+*.pdf
+
+# System files
+.DS_Store
