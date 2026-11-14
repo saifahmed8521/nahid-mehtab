@@ -519,27 +519,22 @@
   /* =========================================================
      MUSIC (activates only when CONFIG.music is set)
      ========================================================= */
-  const musicBtn = $('#musicBtn');
+  // The song simply plays in the background (no on-screen music button).
   let audio = null;
-  let userPaused = false, pausedByHide = false;
+  let pausedByHide = false;
   if (CONFIG.music) {
     audio = new Audio(CONFIG.music);
     audio.loop = true; audio.preload = 'auto';
-    musicBtn.hidden = false;
-    musicBtn.addEventListener('click', () => {
-      if (audio.paused) { userPaused = false; playMusic(); } else { userPaused = true; pauseMusic(); }
-    });
     // pause when the guest switches to another app/tab (e.g. WhatsApp), resume when they come back
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && !audio.paused) { pausedByHide = true; pauseMusic(); }
-      else if (!document.hidden && pausedByHide && !userPaused) { pausedByHide = false; playMusic(); }
+      else if (!document.hidden && pausedByHide) { pausedByHide = false; playMusic(); }
     });
   }
   function playMusic(fadeIn) {
     if (!audio) return;
     if (fadeIn) audio.volume = 0.05;
     audio.play().then(() => {
-      musicBtn.classList.add('is-playing'); musicBtn.setAttribute('aria-label', 'Pause music');
       if (fadeIn) { // gentle fade up (phones that ignore volume simply play at normal level)
         const start = performance.now();
         const step = (now) => {
@@ -552,7 +547,7 @@
     }).catch(() => {});
   }
   function pauseMusic() {
-    audio.pause(); musicBtn.classList.remove('is-playing'); musicBtn.setAttribute('aria-label', 'Play music');
+    audio.pause();
   }
   // called from the door tap, so phones allow the music to start
   function startMusic() { if (audio) playMusic(true); }
