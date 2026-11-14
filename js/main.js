@@ -8,16 +8,15 @@
   const CONFIG = {
     // Put a song file in assets/audio/ and set its path here, e.g. 'assets/audio/song.mp3'.
     // Leave empty for no music (the music button stays hidden).
-    music: '',
+    music: 'assets/audio/song.mp3',
 
-    // Soft chime + whoosh when the doors open (made in the browser, no file needed). Set to false to turn off.
+    // Wind chimes when the doors open. Set gateSound to false to turn it off.
     gateSound: true,
-    // Optional: use your own door sound instead, e.g. 'assets/audio/door.mp3'
-    gateSoundFile: '',
+    gateSoundFile: 'assets/audio/gate-chimes.mp3',
 
     // WhatsApp group invite link for "Nahid ki Mehfil" (bride's side).
     // Paste the link from WhatsApp → Group info → Invite via link, e.g. 'https://chat.whatsapp.com/AbCdEf123...'
-    whatsappGroup: '',
+    whatsappGroup: 'https://chat.whatsapp.com/LTC79bHSLoa4QxgZgDIBYY',
 
     // Countdown target — Nikah ceremony, 8:00 PM India time
     nikah: new Date('2027-01-02T20:00:00+05:30'),
@@ -87,103 +86,12 @@
     }, 900);
     setTimeout(() => gate.remove(), 2400);
   }
-  /* ---------- Gate sound ----------
-     Not a tune: a soft latch "thunk", the two doors sweeping open (air, left & right),
-     a low swell of the room opening up, and a faint scatter of gold-dust glitter. */
+  /* ---------- Gate sound: wind chimes (assets/audio/gate-chimes.mp3) ---------- */
+  const gateAudio = CONFIG.gateSound && CONFIG.gateSoundFile ? new Audio(CONFIG.gateSoundFile) : null;
+  if (gateAudio) gateAudio.preload = 'auto';
   function playGateSound() {
-    if (!CONFIG.gateSound) return;
-    if (CONFIG.gateSoundFile) { // your own sound file, if you prefer
-      try { const a = new Audio(CONFIG.gateSoundFile); a.volume = 0.8; a.play().catch(() => {}); } catch (e) { /* ignore */ }
-      return;
-    }
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    try {
-      const ac = new AC();
-      if (ac.state === 'suspended' && ac.resume) ac.resume();
-      const t0 = ac.currentTime + 0.02;
-      const sr = ac.sampleRate;
-      const rnd = (a, b) => a + Math.random() * (b - a);
-
-      // output: master -> soft compressor -> speakers, plus a short airy reverb
-      const comp = ac.createDynamicsCompressor();
-      comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.01; comp.release.value = 0.3;
-      comp.connect(ac.destination);
-      const master = ac.createGain(); master.gain.value = 1;
-      const verb = ac.createConvolver();
-      const irLen = Math.floor(sr * 1.8);
-      const ir = ac.createBuffer(2, irLen, sr);
-      for (let c = 0; c < 2; c++) {
-        const d = ir.getChannelData(c);
-        for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 4);
-      }
-      verb.buffer = ir;
-      const wet = ac.createGain(); wet.gain.value = 0.28;
-      master.connect(comp);
-      master.connect(verb); verb.connect(wet); wet.connect(comp);
-
-      const env = (g, t, peak, attack, release) => {
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(peak, t + attack);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
-      };
-      const noiseBuf = (sec, brown) => {
-        const b = ac.createBuffer(1, Math.floor(sr * sec), sr);
-        const d = b.getChannelData(0);
-        let last = 0;
-        for (let i = 0; i < d.length; i++) {
-          const w = Math.random() * 2 - 1;
-          if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w;
-        }
-        return b;
-      };
-      const pan = (node, p) => {
-        if (!ac.createStereoPanner) return node;
-        const s = ac.createStereoPanner(); s.pan.value = p; node.connect(s); return s;
-      };
-
-      // 1) latch: a muffled wooden thunk + tiny click
-      const th = ac.createOscillator(); th.type = 'sine';
-      th.frequency.setValueAtTime(120, t0); th.frequency.exponentialRampToValueAtTime(48, t0 + 0.2);
-      const thg = ac.createGain(); env(thg, t0, 0.45, 0.004, 0.26);
-      th.connect(thg); thg.connect(master); th.start(t0); th.stop(t0 + 0.35);
-      const ck = ac.createBufferSource(); ck.buffer = noiseBuf(0.08, false);
-      const ckf = ac.createBiquadFilter(); ckf.type = 'bandpass'; ckf.frequency.value = 2200; ckf.Q.value = 1.4;
-      const ckg = ac.createGain(); env(ckg, t0, 0.07, 0.002, 0.05);
-      ck.connect(ckf); ckf.connect(ckg); ckg.connect(master); ck.start(t0); ck.stop(t0 + 0.1);
-
-      // 2) the two doors sweeping open — soft air, one each side
-      [[-0.75, 0.12], [0.75, 0.2]].forEach(([p, d]) => {
-        const t = t0 + d;
-        const n = ac.createBufferSource(); n.buffer = noiseBuf(2.2, true);
-        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.6;
-        lp.frequency.setValueAtTime(260, t);
-        lp.frequency.exponentialRampToValueAtTime(1600, t + 0.75);
-        lp.frequency.exponentialRampToValueAtTime(500, t + 1.9);
-        const g = ac.createGain(); env(g, t, 0.32, 0.6, 1.35);
-        n.connect(lp); lp.connect(g); pan(g, p).connect(master);
-        n.start(t); n.stop(t + 2.2);
-      });
-
-      // 3) low swell — the room opening up
-      const sw = ac.createBufferSource(); sw.buffer = noiseBuf(2.6, true);
-      const swf = ac.createBiquadFilter(); swf.type = 'lowpass'; swf.frequency.value = 170;
-      const swg = ac.createGain(); env(swg, t0 + 0.1, 0.5, 0.7, 1.7);
-      sw.connect(swf); swf.connect(swg); swg.connect(master); sw.start(t0 + 0.1); sw.stop(t0 + 2.7);
-
-      // 4) faint gold-dust shimmer — tiny airy noise grains (no pitch, nothing musical)
-      const grain = noiseBuf(0.06, false);
-      for (let i = 0; i < 16; i++) {
-        const t = t0 + rnd(0.4, 1.7);
-        const n = ac.createBufferSource(); n.buffer = grain;
-        const f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = rnd(5000, 8000);
-        const g = ac.createGain(); env(g, t, rnd(0.02, 0.05), 0.004, rnd(0.03, 0.05));
-        n.connect(f); f.connect(g); pan(g, rnd(-0.8, 0.8)).connect(master);
-        n.start(t); n.stop(t + 0.07);
-      }
-
-      setTimeout(() => { try { ac.close(); } catch (e) { /* ignore */ } }, 5000);
-    } catch (e) { /* sound is optional */ }
+    if (!gateAudio) return;
+    try { gateAudio.currentTime = 0; gateAudio.volume = 1; gateAudio.play().catch(() => {}); } catch (e) { /* sound is optional */ }
   }
 
   openBtn.addEventListener('click', openGate);
@@ -613,20 +521,41 @@
      ========================================================= */
   const musicBtn = $('#musicBtn');
   let audio = null;
+  let userPaused = false, pausedByHide = false;
   if (CONFIG.music) {
     audio = new Audio(CONFIG.music);
-    audio.loop = true; audio.preload = 'auto'; audio.volume = .6;
+    audio.loop = true; audio.preload = 'auto';
     musicBtn.hidden = false;
-    musicBtn.addEventListener('click', () => (audio.paused ? playMusic() : pauseMusic()));
+    musicBtn.addEventListener('click', () => {
+      if (audio.paused) { userPaused = false; playMusic(); } else { userPaused = true; pauseMusic(); }
+    });
+    // pause when the guest switches to another app/tab (e.g. WhatsApp), resume when they come back
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && !audio.paused) { pausedByHide = true; pauseMusic(); }
+      else if (!document.hidden && pausedByHide && !userPaused) { pausedByHide = false; playMusic(); }
+    });
   }
-  function playMusic() {
+  function playMusic(fadeIn) {
     if (!audio) return;
-    audio.play().then(() => { musicBtn.classList.add('is-playing'); musicBtn.setAttribute('aria-label', 'Pause music'); }).catch(() => {});
+    if (fadeIn) audio.volume = 0.05;
+    audio.play().then(() => {
+      musicBtn.classList.add('is-playing'); musicBtn.setAttribute('aria-label', 'Pause music');
+      if (fadeIn) { // gentle fade up (phones that ignore volume simply play at normal level)
+        const start = performance.now();
+        const step = (now) => {
+          const k = Math.min(1, (now - start) / 2500);
+          audio.volume = 0.05 + 0.6 * k;
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      } else audio.volume = 0.65;
+    }).catch(() => {});
   }
   function pauseMusic() {
     audio.pause(); musicBtn.classList.remove('is-playing'); musicBtn.setAttribute('aria-label', 'Play music');
   }
-  function startMusic() { if (audio) playMusic(); }
+  // called from the door tap, so phones allow the music to start
+  function startMusic() { if (audio) playMusic(true); }
 
   /* =========================================================
      CLOSING STARS

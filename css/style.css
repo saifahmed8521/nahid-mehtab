@@ -295,6 +295,8 @@ html:not(.js) body.is-locked { overflow: auto; height: auto; }
   display: block; font-family: var(--ff-script); font-size: 16cqw; line-height: 1.05;
   padding: 0 4cqw;
   filter: drop-shadow(0 .5cqw 1.4cqw rgba(0, 0, 0, .45));
+  /* extra room so the tall N / M loops are not cut off (no change to layout) */
+  padding-top: .22em; margin-top: -.22em;
 }
 .card__with {
   font-family: var(--ff-body); font-style: italic; font-size: 4.4cqw; color: var(--ivory-2);
@@ -467,7 +469,11 @@ html:not(.js) .verse__text .w, .verse__text.is-in .w { opacity: 1; filter: none;
    ========================================================= */
 .lead { font-size: clamp(19px, 4.8vw, 21px); color: var(--ivory-2); max-width: 470px; margin: 0 auto; }
 .couple { margin: 40px 0 36px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.person__name { font-size: clamp(58px, 17vw, 82px); line-height: 1.1; margin: 0; padding: 0 12px; }
+.person__name {
+  font-size: clamp(58px, 17vw, 82px); line-height: 1.1; margin: 0; padding: 0 12px;
+  /* extra room so the tall N / M loops are not cut off (no change to layout) */
+  padding-top: .22em; margin-top: -.22em;
+}
 .person__parents { margin-top: 4px; font-size: 17px; letter-spacing: .02em; color: var(--ivory-3); font-style: italic; }
 .couple__with { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 340px; }
 .couple__with .line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-500)); }
@@ -530,7 +536,7 @@ html:not(.js) .verse__text .w, .verse__text.is-in .w { opacity: 1; filter: none;
   -webkit-mask: linear-gradient(#000 70%, transparent);
           mask: linear-gradient(#000 70%, transparent);
 }
-.haldi__title { font-size: clamp(54px, 15vw, 76px); line-height: 1.05; margin: 4px 0 6px; }
+.haldi__title { font-size: clamp(54px, 15vw, 76px); line-height: 1.05; margin: 4px 0 6px; padding: .16em 12px .06em; }
 .haldi__sub { font-style: italic; color: var(--ivory-2); font-size: 19px; }
 .haldi__chhatri {
   width: 100%; max-width: 640px; margin: 36px auto 0;
@@ -635,7 +641,7 @@ html:not(.js) .verse__text .w, .verse__text.is-in .w { opacity: 1; filter: none;
 /* =========================================================
    WHATSAPP GROUP — Nahid ki Mehfil
    ========================================================= */
-.mehfil__title { font-size: clamp(56px, 15.5vw, 78px); line-height: 1.1; margin: 0; padding: 0 12px; }
+.mehfil__title { font-size: clamp(56px, 15.5vw, 78px); line-height: 1.1; margin: 0; padding: .16em 12px .06em; }
 .mehfil__tag { font-style: italic; color: var(--ivory-2); font-size: 19px; }
 .mehfil__card {
   position: relative; max-width: 420px; margin: 8px auto 0; padding: 16px 16px 26px;
@@ -717,7 +723,7 @@ html:not(.js) .verse__text .w, .verse__text.is-in .w { opacity: 1; filter: none;
 @keyframes twinkle { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.2); } }
 .closing__mono { width: 74px; margin: 0 auto 22px; }
 .closing__bless { font-size: clamp(21px, 5.4vw, 25px); font-style: italic; color: var(--ivory); line-height: 1.45; }
-.closing__family { font-size: clamp(58px, 16vw, 84px); line-height: 1.1; margin: 0; padding: 0 10px; }
+.closing__family { font-size: clamp(58px, 16vw, 84px); line-height: 1.1; margin: 0; padding: .16em 10px .06em; }
 .closing__names {
   margin: 12px -8px 0; color: var(--ivory); font-weight: 500; line-height: 1.55;
   /* sized so the first line always fits on one line on phones (JS fine-tunes it) */
@@ -792,6 +798,9 @@ html:not(.js) .verse__text .w, .verse__text.is-in .w { opacity: 1; filter: none;
 .dock__btn svg { width: 20px; height: 20px; }
 .dock__btn:active { background: rgba(219, 192, 137, .16); transform: scale(.95); }
 body.dock-on .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+@media (max-width: 760px) { /* music button top-right on phones, clear of the dock */
+  .music { top: calc(12px + env(safe-area-inset-top)); bottom: auto; right: 12px; width: 44px; height: 44px; }
+}
 
 /* ---------- music + toast + sparkles ---------- */
 .music {
